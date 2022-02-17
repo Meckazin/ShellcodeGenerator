@@ -6,15 +6,15 @@
 
 //Merging .rdata to .text is another option to store arrays
 //#pragma comment(linker, "/merge:.rdata=.text")
-#include <Windows.h>
 #include "GetProcAddress.h"
+#include <Windows.h>
 
 // Define our string and allocate it to .text section. This results into smaller shellcode than using the merge trick mentioned earlier
 // This allocates the string before the executable code, so you must use the offset provided by the build output
-#pragma section(".text")
-__declspec(allocate(".text"))char GetNativeSystemInfoArr[] = { 'G','e','t','N','a','t','i','v','e','S','y','s','t','e','m','I','n','f','o', 0 };
+//#pragma section(".text")
+//__declspec(allocate(".text"))char GetNativeSystemInfoArr[] = { 'G','e','t','N','a','t','i','v','e','S','y','s','t','e','m','I','n','f','o', 0 };
 
-extern "C" _SYSTEM_INFO _code()
+SYSTEM_INFO _code()
 {
     //Function definitions
     typedef FARPROC(WINAPI* GetProcAddressProc)(HMODULE, LPCSTR);
@@ -28,19 +28,22 @@ extern "C" _SYSTEM_INFO _code()
     GetProcAddressProc pGetProcAddress = (GetProcAddressProc)hGetProcAddress;
 
     //GetNativeSystemInfo ProcAddress
-    //Use char array as we can't use PE's .data section, this requires you to merge .rdata to .text
-    //char GetNativeSystemInfoArr[] = { 'G','e','t','N','a','t','i','v','e','S','y','s','t','e','m','I','n','f','o', 0 };
+    //Use char arrays as we can't use PE's .data section. Arrays longer than 15 elements are stored in the .rdata, this requires you to merge .rdata to .text
+    //One trick is to split too long arrays and then concatenate them
+    char GetNativeSystemInfoArr1[] = { 'G','e','t','N','a','t','i','v','e','S','y','s','t','e','m' };
+    char GetNativeSystemInfoArr2[] = { 'I', 'n', 'f', 'o', 0};
+    LPCSTR GetNativeSystemInfoArr = strcat(GetNativeSystemInfoArr1, GetNativeSystemInfoArr2);
 
     //You can also just use Ordinals
     //HANDLE hGetNativeSystemInfo = pGetProcAddress(hKernel32, (LPCSTR)652);
 
     //Get address of systeminfo
-    HANDLE hGetNativeSystemInfo = pGetProcAddress(hKernel32, (LPCSTR)GetNativeSystemInfoArr);
+    HANDLE hGetNativeSystemInfo = pGetProcAddress(hKernel32, GetNativeSystemInfoArr);
     //Create the function from the pointer
     GetNativeSystemInfoProc pGetNativeSystemInfo = (GetNativeSystemInfoProc)hGetNativeSystemInfo;
 
     //Initialize output data
-    _SYSTEM_INFO sysinfo;
+    SYSTEM_INFO sysinfo;
     // Call GetNativeSystemInfo
     pGetNativeSystemInfo(&sysinfo);
 

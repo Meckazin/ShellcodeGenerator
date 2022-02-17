@@ -126,7 +126,6 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
@@ -135,7 +134,10 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <CompileAs>Default</CompileAs>
+      <CompileAs>CompileAsC</CompileAs>
+      <OmitDefaultLibName>true</OmitDefaultLibName>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Native</SubSystem>
@@ -148,6 +150,7 @@
       <NoEntryPoint>true</NoEntryPoint>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(OutDir)$(TargetName).map</MapFileName>
+      <FunctionOrder>FunctionLinkOrder.txt</FunctionOrder>
     </Link>
     <PostBuildEvent>
       <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File $(SolutionDir)Update-Shellcode.ps1 -Format C -Path $(OutDir)$(TargetName)$(TargetExt) -OutFile $(SolutionDir)ShellcodeRunner\Shellcode.h</Command>

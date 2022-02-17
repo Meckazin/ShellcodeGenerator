@@ -12,7 +12,7 @@ using namespace std;
 * You need to use the offset if .rdata was merged into .text section or arrays were stored into .text section
 * Or the code for GetProcAddress.h is not merged into Main.cpp
 */
-#define FUNCTION_OFFSET 0x00000090
+#define FUNCTION_OFFSET 0x00000000
 
 //Definition for our shellcode entry function
 typedef _SYSTEM_INFO(*_code)();
@@ -24,7 +24,9 @@ int main()
 	VirtualProtect(rawData, sizeof rawData, PAGE_EXECUTE, &old_flag);
 
 	// Create function from our offset
-	_code fn_code = (_code)(void*)&rawData[FUNCTION_OFFSET];
+	//_code fn_code = (_code)(void*)&rawData[FUNCTION_OFFSET];
+	// Classic execution from no offset
+	_code fn_code = (_code)(void*)rawData;
 
 	//Run it
 	_SYSTEM_INFO info = fn_code();

@@ -1,0 +1,4 @@
+_code
+GetKernel32BaseAddress
+GetProcAddressPEB
+GetNativeSystemInfoArr
