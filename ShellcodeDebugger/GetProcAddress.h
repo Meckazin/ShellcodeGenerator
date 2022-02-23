@@ -61,6 +61,9 @@ HANDLE GetProcAddressPEB()
 	DWORD dwExportDirRVA;
 	PIMAGE_EXPORT_DIRECTORY pExportDir;
 	USHORT usOrdinalTableIndex;
+	PDWORD pdwFunctionNameBase;
+	char* pFunctionName;
+	DWORD dwNumFunctions;
 
 	//PEB offset is always fixed depending or arch
 #if defined(_WIN64)
@@ -83,16 +86,20 @@ HANDLE GetProcAddressPEB()
 		pNTHeader = (PIMAGE_NT_HEADERS)((ULONG_PTR)pModuleBase + ((PIMAGE_DOS_HEADER)pModuleBase)->e_lfanew);
 		dwExportDirRVA = pNTHeader->OptionalHeader.DataDirectory[0].VirtualAddress;
 		pExportDir = (PIMAGE_EXPORT_DIRECTORY)((ULONG_PTR)pModuleBase + dwExportDirRVA);
+		dwNumFunctions = pExportDir->NumberOfNames;
+		pdwFunctionNameBase = (PDWORD)((PCHAR)pModuleBase + pExportDir->AddressOfNames);
 
-		/* We will find the GetProcAddress with its Ordinal value of 02B1
-		*  Because first value is 0004, we add that to it, resulting 02B5
-		* So the TableIndex can be calculated by ModuleBase + RVA of Ordinal Table + 02B5 * 2 
-		* (2 due to length of the Ordinal Value)
-		*/
-		usOrdinalTableIndex = *(PUSHORT)(((ULONG_PTR)pModuleBase + pExportDir->AddressOfNameOrdinals) + (2 * 693));
-
-		//Use index to find the address (result of above should be 693 anyway, so was this all in vain?)
-		return (HANDLE)((ULONG_PTR)pModuleBase + *(PDWORD)(((ULONG_PTR)pModuleBase + pExportDir->AddressOfFunctions) + (4 * usOrdinalTableIndex)));
+		char getProcAddressArr[] = { 'G','e','t','P','r','o','c','A','d','d','r','e','s','s',0 };
+		for (size_t i = 0; i < dwNumFunctions; i++)
+		{
+			pFunctionName = (char*)(*pdwFunctionNameBase + (ULONG_PTR)pModuleBase);
+			if (strcmp(getProcAddressArr, pFunctionName) == 0)
+			{
+				usOrdinalTableIndex = *(PUSHORT)(((ULONG_PTR)pModuleBase + pExportDir->AddressOfNameOrdinals) + (2 * i));
+				return (HMODULE)((ULONG_PTR)pModuleBase + *(PDWORD)(((ULONG_PTR)pModuleBase + pExportDir->AddressOfFunctions) + (4 * usOrdinalTableIndex)));
+			}
+			pdwFunctionNameBase++;
+		}
 	}
 
 	// All modules have been exhausted and the function was not found.
